@@ -37,6 +37,8 @@ class BaseCrawler:
         self.debug: bool = bool(config.get("debug", False))
         self.debug_dir: str = config.get("debug_dir", "debug")
         self.user_data_root: str = config.get("user_data_dir", "user_data")
+        # 只抓直飞（不含中转/经停），默认开启
+        self.direct_only: bool = bool(config.get("direct_only", True))
 
     # ---------- 浏览器 ----------
     @property
