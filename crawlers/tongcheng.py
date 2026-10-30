@@ -171,6 +171,19 @@ class TongchengCrawler(BaseCrawler):
             self.logger.info("[tongcheng] 航班 %d 条，直飞 %d 条", fl_total, fl_kept)
             if not self._logged_keys and isinstance(fl, list) and fl and isinstance(fl[0], dict):
                 self.logger.info("[tongcheng] fl 字段样例: %s", sorted(fl[0].keys()))
+                try:
+                    from collections import Counter
+                    for f in fl[:2]:
+                        if isinstance(f, dict):
+                            self.logger.info(
+                                "[tongcheng] 样例航班: %s",
+                                {k: f.get(k) for k in ("fn", "atp", "$flightType", "fs", "sts", "td", "dt", "at")},
+                            )
+                    for k in ("$flightType", "fs", "sts", "td", "sfd", "icsf", "ieso"):
+                        c = Counter(str(f.get(k)) for f in fl if isinstance(f, dict))
+                        self.logger.info("[tongcheng] 字段 %s 分布: %s", k, dict(c.most_common(6)))
+                except Exception:
+                    pass
                 self._logged_keys = True
 
         # 直飞模式下 fl[] 没解析出来时，退回 lp 兜底（总比空手好）
