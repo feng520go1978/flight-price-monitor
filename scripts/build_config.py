@@ -14,12 +14,15 @@ def main():
     ap.add_argument("--platforms", default="fliggy,tuniu,qunar,tongcheng")
     ap.add_argument("--threshold", type=int, default=0)
     ap.add_argument("--serverchan-key", default="")
+    ap.add_argument("--direct-only", default="true",
+                    help="只抓直飞航班（true/false）")
     ap.add_argument("--output", default="config.yaml")
     args = ap.parse_args()
 
     depart = [d.strip() for d in args.dates.split(",") if d.strip()]
     returns = [d.strip() for d in args.return_dates.split(",") if d.strip()]
     platforms = [p.strip() for p in args.platforms.split(",") if p.strip()]
+    direct_only = str(args.direct_only).strip().lower() not in ("0", "false", "no", "off", "")
 
     lines = ["routes:"]
     lines += [
@@ -58,6 +61,7 @@ def main():
         "  timeout_seconds: 45",
         "  delay_min: 5",
         "  delay_max: 15",
+        f"  direct_only: {'true' if direct_only else 'false'}",
         '  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"',
         '  mobile_user_agent: ""',
         "  debug: false",
