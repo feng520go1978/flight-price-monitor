@@ -412,7 +412,10 @@ class QunarCrawler(BaseCrawler):
             except Exception as e:
                 self.logger.warning("[qunar] 响应非 JSON: %s | 头部=%r", e, text[:160])
             if root is not None:
-                visit(root)
+                try:
+                    visit(root)
+                except Exception as e:
+                    self.logger.warning("[qunar] 结构解析异常: %s", e)
 
         if not direct and not transfer and text:
             self.logger.info(
