@@ -406,10 +406,21 @@ class QunarCrawler(BaseCrawler):
                         pass
 
         if text:
+            root = None
             try:
-                visit(json.loads(text))
-            except Exception:
-                pass
+                root = json.loads(text)
+            except Exception as e:
+                self.logger.warning("[qunar] 响应非 JSON: %s | 头部=%r", e, text[:160])
+            if root is not None:
+                visit(root)
+
+        if not direct and not transfer and text:
+            self.logger.info(
+                "[qunar] 结构解析未命中: root=%s, 含flights=%s, 头部=%r",
+                type(root).__name__ if text else "-",
+                ('"flights"' in text) or ('\\"flights\\"' in text),
+                text[:200],
+            )
         return direct, transfer
 
     @staticmethod
