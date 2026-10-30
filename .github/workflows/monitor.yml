@@ -33,7 +33,7 @@ on:
       platforms:
         description: '平台: ctrip,tongcheng,qunar,tuniu,fliggy'
         required: false
-        default: 'ctrip,tongcheng,qunar,tuniu'
+        default: 'ctrip,tongcheng,qunar'
       threshold:
         description: '低价提醒阈值（元）'
         required: false
@@ -106,7 +106,7 @@ jobs:
         run: |
           echo "## 本轮抓取结果" >> "$GITHUB_STEP_SUMMARY"
           if [ -f docs/data/latest.json ]; then
-            jq -r '.summary[] | "**\(.from) → \(.to)　\(.date)**　最低 **¥\(.min_price)**　（\(.best_platform)　\(.best_flight)　\(.best_depart_time)-\(.best_arrive_time)）\n\n各平台：\(.per_platform | to_entries | map("\(.key)=¥\(.value)") | join("　·　"))\n"' docs/data/latest.json >> "$GITHUB_STEP_SUMMARY" || echo "解析 latest.json 失败" >> "$GITHUB_STEP_SUMMARY"
+            jq -r '.data.summary[] | "**\(.from) → \(.to)　\(.date)**　最低 **¥\(.min_price)**　（\(.best_platform)　\(.best_flight)　\(.best_depart_time)-\(.best_arrive_time)）\n\n各平台：\(.per_platform | to_entries | map("\(.key)=¥\(.value)") | join("　·　"))\n"' docs/data/latest.json >> "$GITHUB_STEP_SUMMARY" || echo "解析 latest.json 失败" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "latest.json 未生成（本轮无数据）" >> "$GITHUB_STEP_SUMMARY"
           fi
