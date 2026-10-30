@@ -19,6 +19,7 @@ import os
 import re
 import json
 import time
+import logging
 import urllib.parse
 from typing import List, Optional
 
@@ -26,6 +27,8 @@ import httpx
 
 from core.models import FlightPrice
 from .base import BaseCrawler
+
+_log = logging.getLogger("jipiao")
 
 
 class QunarCrawler(BaseCrawler):
@@ -367,8 +370,9 @@ class QunarCrawler(BaseCrawler):
         if transfer:
             self.logger.warning("[qunar] 本轮只有中转条目（%d 条），无直飞报价", len(transfer))
             return []
-        # 结构解析不到（响应格式变化），退回正则
-        return self._extract_qunar_prices(text)
+        # 结构解析不到（响应格式变化）：直飞模式下宁缺毋滥，不用正则兜底
+        self.logger.warning("[qunar] 结构解析未命中，直飞模式放弃本轮数据（避免中转价混入）")
+        return []
 
     @staticmethod
     def _split_by_direct(text: str):
@@ -376,22 +380,25 @@ class QunarCrawler(BaseCrawler):
         direct: list = []
         transfer: list = []
 
+        def classify(f):
+            if not isinstance(f, dict):
+                return
+            try:
+                price = int(float(f.get("minPrice")))
+            except Exception:
+                return
+            if not (100 <= price <= 50000):
+                return
+            cat = str(f.get("cat") or "")
+            is_transfer = ("Transfer" in cat) or bool(f.get("transCity"))
+            (transfer if is_transfer else direct).append(price)
+
         def visit(node):
             if isinstance(node, dict):
-                flights = node.get("flights")
-                if isinstance(flights, list):
-                    for f in flights:
-                        if not isinstance(f, dict):
-                            continue
-                        try:
-                            price = int(float(f.get("minPrice")))
-                        except Exception:
-                            continue
-                        if not (100 <= price <= 50000):
-                            continue
-                        cat = str(f.get("cat") or "")
-                        is_transfer = ("Transfer" in cat) or bool(f.get("transCity"))
-                        (transfer if is_transfer else direct).append(price)
+                # 统一按"含 minPrice 的节点即航班项"分类，
+                # 无论它是在 flights 列表里还是括号配对抽出的数组里
+                if "minPrice" in node:
+                    classify(node)
                 for v in node.values():
                     visit(v)
             elif isinstance(node, list):
@@ -399,32 +406,90 @@ class QunarCrawler(BaseCrawler):
                     visit(v)
             elif isinstance(node, str):
                 s = node.strip()
+                parsed = False
                 if s[:1] in ("{", "["):
                     try:
                         visit(json.loads(s))
+                        parsed = True
                     except Exception:
                         pass
+                # 兜底：data 字段可能是从中间截断的 JSON 片段流，
+                # 按 "flights" 标记做括号配对，抽出内嵌数组再解析
+                if not parsed:
+                    for arr in QunarCrawler._iter_embedded_arrays(s, "flights"):
+                        try:
+                            visit(json.loads(arr))
+                        except Exception:
+                            pass
 
         if text:
             root = None
             try:
                 root = json.loads(text)
             except Exception as e:
-                self.logger.warning("[qunar] 响应非 JSON: %s | 头部=%r", e, text[:160])
+                _log.warning("[qunar] 响应非 JSON: %s | 头部=%r", e, text[:160])
             if root is not None:
                 try:
                     visit(root)
                 except Exception as e:
-                    self.logger.warning("[qunar] 结构解析异常: %s", e)
+                    _log.warning("[qunar] 结构解析异常: %s", e)
 
         if not direct and not transfer and text:
-            self.logger.info(
+            _log.info(
                 "[qunar] 结构解析未命中: root=%s, 含flights=%s, 头部=%r",
                 type(root).__name__ if text else "-",
                 ('"flights"' in text) or ('\\"flights\\"' in text),
                 text[:200],
             )
         return direct, transfer
+
+    @staticmethod
+    def _iter_embedded_arrays(s: str, key: str):
+        """在(可能截断的)JSON片段字符串中，按 '"key"' 标记括号配对抽取 [..] 数组。
+
+        返回数组原文的迭代器。容忍片段尾部截断：解析交给调用方裁剪重试。
+        """
+        marker = '"%s"' % key
+        pos = 0
+        while True:
+            i = s.find(marker, pos)
+            if i < 0:
+                return
+            j = s.find("[", i + len(marker))
+            if j < 0:
+                return
+            depth = 0
+            in_str = False
+            esc = False
+            end = -1
+            for k in range(j, len(s)):
+                ch = s[k]
+                if esc:
+                    esc = False
+                    continue
+                if ch == "\\":
+                    esc = True
+                    continue
+                if ch == '"':
+                    in_str = not in_str
+                    continue
+                if in_str:
+                    continue
+                if ch == "[":
+                    depth += 1
+                elif ch == "]":
+                    depth -= 1
+                    if depth == 0:
+                        end = k
+                        break
+            if end < 0:
+                # 尾部截断：裁到最后一个完整 '}' 再闭合
+                last = s.rfind("}", j, len(s))
+                if last > j:
+                    yield s[j:last + 1] + "]"
+                return
+            yield s[j:end + 1]
+            pos = end + 1
 
     @staticmethod
     def _extract_qunar_prices(text: str) -> list:
