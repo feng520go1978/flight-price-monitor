@@ -18,6 +18,7 @@ from .base import BaseCrawler
 class TongchengCrawler(BaseCrawler):
     name = "tongcheng"
     use_mobile = True
+    _logged_keys = False
 
     # 同程旅行 H5 机票单程预订页（用户提供的真实入口）
     URL_TPL = (
@@ -27,7 +28,7 @@ class TongchengCrawler(BaseCrawler):
         "&fromcitycode={from_city}&fromCode={from_city}"
         "&tocitycode={to_city}&toCode={to_city}"
         "&acn={to_name}&dcn={from_name}"
-        "&refId=&cabin=0&platcode=518&direct=0&thirdMemberId="
+        "&refId=&cabin=0&platcode=518&direct={direct}&thirdMemberId="
         "&fPassType=&nametype=0,0&frompage=HOME&outrefid="
     )
 
@@ -60,6 +61,7 @@ class TongchengCrawler(BaseCrawler):
                     from_name=urllib.parse.quote(self.CITY_NAME.get(fc, from_city)),
                     to_name=urllib.parse.quote(self.CITY_NAME.get(tc, to_city)),
                     date=date,
+                    direct=1 if self.direct_only else 0,
                 )
                 self.logger.info("[tongcheng] GET %s", url)
                 captured = self.attach_xhr_collector(page, self.XHR_KEYS)
@@ -99,14 +101,16 @@ class TongchengCrawler(BaseCrawler):
             return float(min(prices))
         return None
 
-    @staticmethod
-    def _extract_prices(text: str) -> list:
+    def _extract_prices(self, text: str) -> list:
         """解析同程 book1/flights 接口 JSON。
 
         权威最低价为 data.lp（当前查询日期最低价）。
         同时遍历 data.fl[] 取每个航班的 atp（含税总价）做交叉校验，
         但只采纳"有票"航班：lps[].brs[].al（余票数）> 0。
         注意：data.pc[] 是价格日历，含其它日期价格，必须排除。
+
+        direct_only=True 时不采信 data.lp（它可能来自中转航班），
+        只按 fl[] 逐航班取价，并剔除带中转/经停标记的航班。
         """
         if not text:
             return []
@@ -121,24 +125,31 @@ class TongchengCrawler(BaseCrawler):
 
         prices: list = []
 
-        # 1) 权威字段：当前查询日期最低价
+        # 1) 权威字段：当前查询日期最低价（仅在未开启直飞过滤时直接采信）
         lp = data.get("lp")
-        try:
-            lpv = int(float(lp))
-            if 100 <= lpv <= 50000:
-                prices.append(lpv)
-        except Exception:
-            pass
+        if not self.direct_only:
+            try:
+                lpv = int(float(lp))
+                if 100 <= lpv <= 50000:
+                    prices.append(lpv)
+            except Exception:
+                pass
 
         # 2) 航班列表交叉校验：仅取有余票航班的最低价
         fl = data.get("fl")
+        fl_total = 0
+        fl_kept = 0
         if isinstance(fl, list):
             for flt in fl:
                 if not isinstance(flt, dict):
                     continue
+                fl_total += 1
+                if self.direct_only and self._is_transfer(flt):
+                    continue
                 lps = flt.get("lps")
                 if not isinstance(lps, list):
                     continue
+                kept_any = False
                 for policy in lps:
                     if not isinstance(policy, dict):
                         continue
@@ -150,10 +161,53 @@ class TongchengCrawler(BaseCrawler):
                         v = int(float(atp))
                         if 100 <= v <= 50000:
                             prices.append(v)
+                            kept_any = True
                     except Exception:
                         pass
+                if kept_any:
+                    fl_kept += 1
+
+        if fl_total and self.direct_only:
+            self.logger.info("[tongcheng] 航班 %d 条，直飞 %d 条", fl_total, fl_kept)
+            if not self._logged_keys and isinstance(fl, list) and fl and isinstance(fl[0], dict):
+                self.logger.info("[tongcheng] fl 字段样例: %s", sorted(fl[0].keys()))
+                self._logged_keys = True
+
+        # 直飞模式下 fl[] 没解析出来时，退回 lp 兜底（总比空手好）
+        if not prices and lp is not None:
+            try:
+                v = int(float(lp))
+                if 100 <= v <= 50000:
+                    prices.append(v)
+                    self.logger.warning("[tongcheng] 直飞解析为空，退回接口最低价 ¥%d（可能含中转）", v)
+            except Exception:
+                pass
 
         return prices
+
+    @staticmethod
+    def _is_transfer(flt: dict) -> bool:
+        """判断航班是否含中转/经停。仅在有明确正向标记时判定，避免误杀。"""
+        for k in ("transfer", "transfers", "transferNum", "isTransfer",
+                  "stop", "stops", "stopNum", "stopCount", "zz", "trn"):
+            if k not in flt:
+                continue
+            v = flt.get(k)
+            if isinstance(v, bool):
+                if v:
+                    return True
+                continue
+            if isinstance(v, (int, float)):
+                if v > 0:
+                    return True
+                continue
+            if isinstance(v, (list, dict)):
+                if len(v) > 0:
+                    return True
+                continue
+            if isinstance(v, str) and v.strip() not in ("", "0", "false", "False", "无"):
+                return True
+        return False
 
     @staticmethod
     def _has_ticket(brs) -> bool:
