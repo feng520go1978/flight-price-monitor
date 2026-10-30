@@ -16,24 +16,36 @@
       ],
       "return_dates": [],
       "platforms": [
-        "qunar",
+        "ctrip",
         "tongcheng"
       ],
       "threshold": 0,
-      "query_time": "2026-10-30 13:47:21"
+      "query_time": "2026-10-30 22:45:50"
     },
     "results": [
+      {
+        "platform": "ctrip",
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-08",
+        "price": 740.0,
+        "airline": "成都航空",
+        "flight_no": "EU1969",
+        "depart_time": "",
+        "arrive_time": "",
+        "fetched_at": "2026-10-30 22:45:09"
+      },
       {
         "platform": "tongcheng",
         "from": "CTU",
         "to": "XMN",
         "date": "2026-11-07",
-        "price": 500.0,
+        "price": 450.0,
         "airline": "",
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 13:46:02"
+        "fetched_at": "2026-10-30 22:45:24"
       },
       {
         "platform": "tongcheng",
@@ -45,19 +57,7 @@
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 13:46:23"
-      },
-      {
-        "platform": "qunar",
-        "from": "CTU",
-        "to": "XMN",
-        "date": "2026-11-08",
-        "price": 700.0,
-        "airline": "",
-        "flight_no": "",
-        "depart_time": "",
-        "arrive_time": "",
-        "fetched_at": "2026-10-30 13:47:21"
+        "fetched_at": "2026-10-30 22:45:50"
       }
     ],
     "summary": [
@@ -66,9 +66,9 @@
         "to": "XMN",
         "date": "2026-11-07",
         "per_platform": {
-          "tongcheng": 500.0
+          "tongcheng": 450.0
         },
-        "min_price": 500.0,
+        "min_price": 450.0,
         "best_platform": "tongcheng",
         "best_flight": "",
         "best_depart_time": "",
@@ -79,8 +79,8 @@
         "to": "XMN",
         "date": "2026-11-08",
         "per_platform": {
-          "tongcheng": 700.0,
-          "qunar": 700.0
+          "ctrip": 740.0,
+          "tongcheng": 700.0
         },
         "min_price": 700.0,
         "best_platform": "tongcheng",
@@ -90,29 +90,29 @@
       }
     ],
     "trend": {
-      "2026-11-07": {
+      "2026-11-08": {
+        "ctrip": [
+          {
+            "t": "2026-10-30 22:45:09",
+            "v": 740.0
+          }
+        ],
         "tongcheng": [
           {
-            "t": "2026-10-30 13:46:02",
-            "v": 500.0
+            "t": "2026-10-30 22:45:50",
+            "v": 700.0
           }
         ]
       },
-      "2026-11-08": {
+      "2026-11-07": {
         "tongcheng": [
           {
-            "t": "2026-10-30 13:46:23",
-            "v": 700.0
-          }
-        ],
-        "qunar": [
-          {
-            "t": "2026-10-30 13:47:21",
-            "v": 700.0
+            "t": "2026-10-30 22:45:24",
+            "v": 450.0
           }
         ]
       }
     },
-    "generated_at": "2026-10-30T13:52:50.559647Z"
+    "generated_at": "2026-10-30T22:51:36.149169Z"
   }
 }
