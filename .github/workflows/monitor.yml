@@ -41,8 +41,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   monitor:
@@ -103,10 +101,30 @@ jobs:
             --results-file docs/data/latest.json \
             --out-dir docs/data
 
+      - name: Print price summary
+        if: always()
+        run: |
+          echo "## 本轮抓取结果" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f docs/data/latest.json ]; then
+            jq -r '.summary[] | "**\(.from) → \(.to)　\(.date)**　最低 **¥\(.min_price)**　（\(.best_platform)　\(.best_flight)　\(.best_depart_time)-\(.best_arrive_time)）\n\n各平台：\(.per_platform | to_entries | map("\(.key)=¥\(.value)") | join("　·　"))\n"' docs/data/latest.json >> "$GITHUB_STEP_SUMMARY" || echo "解析 latest.json 失败" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "latest.json 未生成（本轮无数据）" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Commit data & report
+        continue-on-error: true
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data/
-          git diff --staged --quiet || git commit -m "chore: update price data $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push
+          # .gitignore 里的 data/ 会把 docs/data/ 也忽略掉，必须 -f 强制加入
+          git add -f docs/data/
+          if git diff --staged --quiet; then
+            echo "数据无变化，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore: update price data $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push origin HEAD:main || {
+            echo "::warning::直接推送失败，rebase 后重试一次"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          }
