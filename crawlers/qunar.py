@@ -195,21 +195,12 @@ class QunarCrawler(BaseCrawler):
             self.logger.warning("[qunar] httpx 命中风控(1999)，可能是限流或token过期")
             return None
 
-        prices = self._extract_qunar_prices(text)
+        prices = self._extract_usable_prices(text)
         if not prices:
             self.logger.warning("[qunar] httpx 响应无价格，len=%d", len(text))
             return None
         self.logger.info("[qunar] httpx%s 提取价格列表: %s",
                          (" " + label) if label else "", sorted(set(prices)))
-        if not label:
-            try:
-                lo = int(min(prices))
-                idx = text.find(str(lo))
-                if idx >= 0:
-                    snippet = text[max(0, idx - 300): idx + 300].replace("\n", " ")
-                    self.logger.info("[qunar] 最低价 ¥%d 上下文: %s", lo, snippet)
-            except Exception:
-                pass
         return float(min(prices))
 
     @staticmethod
@@ -305,7 +296,7 @@ class QunarCrawler(BaseCrawler):
         # 解析响应价格
         if snap["response_text"]:
             self._dump_raw_text(snap["response_text"], f"browser_{from_name}_{to_name}_{date}")
-            prices = self._extract_qunar_prices(snap["response_text"])
+            prices = self._extract_usable_prices(snap["response_text"])
             if prices:
                 self.logger.info("[qunar] 浏览器提取价格列表: %s", sorted(set(prices)))
                 return float(min(prices))
@@ -356,6 +347,71 @@ class QunarCrawler(BaseCrawler):
             pass
 
     # ==================== 价格解析 ====================
+    def _extract_usable_prices(self, text: str) -> list:
+        """按条目结构取价：直飞模式下去掉中转/联程条目。
+
+        去哪儿响应里每个条目形如：
+            {"cat":"MinPriceTransfer","code":"3U6661/9H8459",
+             "transCity":"贵阳","transTime":"27h10m","minPrice":"489", ...}
+        中转条目 cat 含 Transfer 或带 transCity，必须剔除；
+        原有 _extract_qunar_prices 只按数字正则扫描，会把中转价算进来。
+        """
+        if not self.direct_only:
+            return self._extract_qunar_prices(text)
+
+        direct, transfer = self._split_by_direct(text)
+        if direct:
+            self.logger.info("[qunar] 条目结构解析：直飞 %d 条，中转 %d 条（已剔除）",
+                             len(direct), len(transfer))
+            return direct
+        if transfer:
+            self.logger.warning("[qunar] 本轮只有中转条目（%d 条），无直飞报价", len(transfer))
+            return []
+        # 结构解析不到（响应格式变化），退回正则
+        return self._extract_qunar_prices(text)
+
+    @staticmethod
+    def _split_by_direct(text: str):
+        """返回 (直飞价格, 中转价格)。递归遍历响应内嵌的 flights 数组。"""
+        direct: list = []
+        transfer: list = []
+
+        def visit(node):
+            if isinstance(node, dict):
+                flights = node.get("flights")
+                if isinstance(flights, list):
+                    for f in flights:
+                        if not isinstance(f, dict):
+                            continue
+                        try:
+                            price = int(float(f.get("minPrice")))
+                        except Exception:
+                            continue
+                        if not (100 <= price <= 50000):
+                            continue
+                        cat = str(f.get("cat") or "")
+                        is_transfer = ("Transfer" in cat) or bool(f.get("transCity"))
+                        (transfer if is_transfer else direct).append(price)
+                for v in node.values():
+                    visit(v)
+            elif isinstance(node, list):
+                for v in node:
+                    visit(v)
+            elif isinstance(node, str):
+                s = node.strip()
+                if s[:1] in ("{", "["):
+                    try:
+                        visit(json.loads(s))
+                    except Exception:
+                        pass
+
+        if text:
+            try:
+                visit(json.loads(text))
+            except Exception:
+                pass
+        return direct, transfer
+
     @staticmethod
     def _extract_qunar_prices(text: str) -> list:
         """解析 touchInnerList JSON，提取航班最低价。
