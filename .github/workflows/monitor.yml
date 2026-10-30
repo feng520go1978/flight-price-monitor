@@ -7,37 +7,37 @@ on:
   workflow_dispatch:
     inputs:
       from_code:
-        description: '出发地三字码 (如 LZO)'
+        description: '出发地三字码 (如 CTU)'
         required: true
-        default: 'LZO'
+        default: 'CTU'
       from_name:
-        description: '出发地名称 (如 泸州)'
+        description: '出发地名称 (如 成都)'
         required: true
-        default: '泸州'
+        default: '成都'
       to_code:
-        description: '目的地三字码 (如 BJS)'
+        description: '目的地三字码 (如 XMN)'
         required: true
-        default: 'BJS'
+        default: 'XMN'
       to_name:
-        description: '目的地名称 (如 北京)'
+        description: '目的地名称 (如 厦门)'
         required: true
-        default: '北京'
+        default: '厦门'
       depart_dates:
-        description: '去程日期, 逗号分隔 (如 2026-09-30,2026-10-01)'
+        description: '去程日期, 逗号分隔 (如 2026-11-07,2026-11-08)'
         required: true
-        default: '2026-09-30,2026-10-01,2026-10-02'
+        default: '2026-11-07,2026-11-08'
       return_dates:
-        description: '回程日期, 逗号分隔 (可选)'
+        description: '回程日期, 逗号分隔 (可选, 单程留空)'
         required: false
-        default: '2026-10-06'
+        default: ''
       platforms:
-        description: '平台: fliggy,tuniu,qunar,tongcheng,ctrip'
+        description: '平台: ctrip,tongcheng,qunar,tuniu,fliggy'
         required: false
-        default: 'fliggy,tuniu,qunar,tongcheng'
+        default: 'ctrip,tongcheng,qunar,tuniu'
       threshold:
         description: '低价提醒阈值（元）'
         required: false
-        default: '0'
+        default: '500'
 
 permissions:
   contents: write
@@ -63,17 +63,27 @@ jobs:
           python -m playwright install chromium --with-deps
 
       - name: Build config from workflow_dispatch or defaults
+        env:
+          IN_FROM_CODE: ${{ inputs.from_code }}
+          IN_FROM_NAME: ${{ inputs.from_name }}
+          IN_TO_CODE: ${{ inputs.to_code }}
+          IN_TO_NAME: ${{ inputs.to_name }}
+          IN_DATES: ${{ inputs.depart_dates }}
+          IN_RETURNS: ${{ inputs.return_dates }}
+          IN_PLATFORMS: ${{ inputs.platforms }}
+          IN_THRESHOLD: ${{ inputs.threshold }}
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
         run: |
           python scripts/build_config.py \
-            --from-code "${{ github.event.inputs.from_code || 'LZO' }}" \
-            --from-name "${{ github.event.inputs.from_name || '泸州' }}" \
-            --to-code "${{ github.event.inputs.to_code || 'BJS' }}" \
-            --to-name "${{ github.event.inputs.to_name || '北京' }}" \
-            --dates "${{ github.event.inputs.depart_dates || '2026-09-30,2026-10-01,2026-10-02' }}" \
-            --return-dates "${{ github.event.inputs.return_dates || '2026-10-06' }}" \
-            --platforms "${{ github.event.inputs.platforms || 'fliggy,tuniu,qunar,tongcheng' }}" \
-            --threshold "${{ github.event.inputs.threshold || '0' }}" \
-            --serverchan-key "${{ secrets.SERVERCHAN_KEY }}" \
+            --from-code "${IN_FROM_CODE:-CTU}" \
+            --from-name "${IN_FROM_NAME:-成都}" \
+            --to-code "${IN_TO_CODE:-XMN}" \
+            --to-name "${IN_TO_NAME:-厦门}" \
+            --dates "${IN_DATES:-2026-11-07,2026-11-08}" \
+            --return-dates "${IN_RETURNS:-}" \
+            --platforms "${IN_PLATFORMS:-ctrip,tongcheng,qunar,tuniu}" \
+            --threshold "${IN_THRESHOLD:-500}" \
+            --serverchan-key "${SERVERCHAN_KEY:-}" \
             --output config.yaml
 
       - name: Run price monitor (one round)
