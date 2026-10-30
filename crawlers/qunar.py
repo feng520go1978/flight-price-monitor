@@ -37,7 +37,7 @@ class QunarCrawler(BaseCrawler):
         "https://touch.qunar.com/ncs/page/flightlist"
         "?depCity={from_name}&arrCity={to_name}"
         "&goDate={date}&from=touch_index_search"
-        "&child=0&baby=0&cabinType=0"
+        "&child=0&baby=0&cabinType=0&dstraight={dstraight}"
     )
 
     CITY_NAME = {
@@ -159,6 +159,8 @@ class QunarCrawler(BaseCrawler):
         body["sort"] = 5
         body["_v"] = 2
         body["underageOption"] = ""
+        # 只取直飞（1=只看直飞，0=含中转）
+        body["dstraight"] = 1 if self.direct_only else 0
         now_ms = int(time.time() * 1000)
         body["r"] = now_ms
         body["st"] = now_ms - 1
@@ -225,6 +227,7 @@ class QunarCrawler(BaseCrawler):
             from_name=urllib.parse.quote(from_name),
             to_name=urllib.parse.quote(to_name),
             date=date,
+            dstraight=1 if self.direct_only else 0,
         )
         self.logger.info("[qunar] 浏览器 GET %s", url)
 
