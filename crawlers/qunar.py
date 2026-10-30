@@ -133,13 +133,27 @@ class QunarCrawler(BaseCrawler):
         price = self._fetch_via_httpx(from_city, to_city, date)
         if price is not None:
             self.logger.info("[qunar] httpx 命中，省去浏览器")
+            # 直飞模式下的 A/B 校验：再发一次"含中转"，看两者是否一致
+            if self.direct_only:
+                try:
+                    alt = self._fetch_via_httpx(from_city, to_city, date, dstraight=0, label="A/B含中转")
+                    if alt is not None:
+                        same = abs(alt - price) < 1
+                        self.logger.info(
+                            "[qunar] A/B %s：直飞 ¥%.0f / 含中转 ¥%.0f → %s",
+                            date, price, alt,
+                            "一致，直飞参数可能未生效" if same else "有差异，直飞过滤生效",
+                        )
+                except Exception:
+                    pass
             return price
         # 2) httpx 失败（限流/无token/异常）→ 浏览器单条查
         self.logger.info("[qunar] httpx 未命中，回退浏览器")
         return self._fetch_via_browser(from_city, to_city, date)
 
     # ==================== httpx 续航 ====================
-    def _fetch_via_httpx(self, from_city: str, to_city: str, date: str) -> Optional[float]:
+    def _fetch_via_httpx(self, from_city: str, to_city: str, date: str,
+                         dstraight: Optional[int] = None, label: str = "") -> Optional[float]:
         """用缓存 token 直接 httpx POST，返回价格或 None。"""
         token = self._load_token()
         if not token:
@@ -160,7 +174,9 @@ class QunarCrawler(BaseCrawler):
         body["_v"] = 2
         body["underageOption"] = ""
         # 只取直飞（1=只看直飞，0=含中转）
-        body["dstraight"] = 1 if self.direct_only else 0
+        if dstraight is None:
+            dstraight = 1 if self.direct_only else 0
+        body["dstraight"] = int(dstraight)
         now_ms = int(time.time() * 1000)
         body["r"] = now_ms
         body["st"] = now_ms - 1
@@ -196,7 +212,8 @@ class QunarCrawler(BaseCrawler):
         if not prices:
             self.logger.warning("[qunar] httpx 响应无价格，len=%d", len(text))
             return None
-        self.logger.info("[qunar] httpx 提取价格列表: %s", sorted(set(prices)))
+        self.logger.info("[qunar] httpx%s 提取价格列表: %s",
+                         (" " + label) if label else "", sorted(set(prices)))
         return float(min(prices))
 
     @staticmethod
