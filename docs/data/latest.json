@@ -1,0 +1,118 @@
+{
+  "ok": true,
+  "data": {
+    "query": {
+      "from": {
+        "code": "CTU",
+        "name": "CTU"
+      },
+      "to": {
+        "code": "XMN",
+        "name": "XMN"
+      },
+      "depart_dates": [
+        "2026-11-07",
+        "2026-11-08"
+      ],
+      "return_dates": [],
+      "platforms": [
+        "qunar",
+        "tongcheng"
+      ],
+      "threshold": 0,
+      "query_time": "2026-10-30 06:36:41"
+    },
+    "results": [
+      {
+        "platform": "tongcheng",
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-07",
+        "price": 540.0,
+        "airline": "",
+        "flight_no": "",
+        "depart_time": "",
+        "arrive_time": "",
+        "fetched_at": "2026-10-30 06:35:33"
+      },
+      {
+        "platform": "tongcheng",
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-08",
+        "price": 700.0,
+        "airline": "",
+        "flight_no": "",
+        "depart_time": "",
+        "arrive_time": "",
+        "fetched_at": "2026-10-30 06:35:54"
+      },
+      {
+        "platform": "qunar",
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-08",
+        "price": 489.0,
+        "airline": "",
+        "flight_no": "",
+        "depart_time": "",
+        "arrive_time": "",
+        "fetched_at": "2026-10-30 06:36:41"
+      }
+    ],
+    "summary": [
+      {
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-07",
+        "per_platform": {
+          "tongcheng": 540.0
+        },
+        "min_price": 540.0,
+        "best_platform": "tongcheng",
+        "best_flight": "",
+        "best_depart_time": "",
+        "best_arrive_time": ""
+      },
+      {
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-08",
+        "per_platform": {
+          "tongcheng": 700.0,
+          "qunar": 489.0
+        },
+        "min_price": 489.0,
+        "best_platform": "qunar",
+        "best_flight": "",
+        "best_depart_time": "",
+        "best_arrive_time": ""
+      }
+    ],
+    "trend": {
+      "2026-11-07": {
+        "tongcheng": [
+          {
+            "t": "2026-10-30 06:35:33",
+            "v": 540.0
+          }
+        ]
+      },
+      "2026-11-08": {
+        "tongcheng": [
+          {
+            "t": "2026-10-30 06:35:54",
+            "v": 700.0
+          }
+        ],
+        "qunar": [
+          {
+            "t": "2026-10-30 06:36:41",
+            "v": 489.0
+          }
+        ]
+      }
+    },
+    "generated_at": "2026-10-30T06:41:39.187177Z"
+  }
+}

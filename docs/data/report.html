@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机票比价 · CTU⇄XMN</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f0f2f7;--card:#fff;--border:#e8eaef;--text:#1a1d29;--sub:#6b7280;
+  --accent:#2563eb;--red:#dc2626;--orange:#d97706;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,.07)}
+body{font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;background:var(--bg);color:var(--text)}
+.page{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+.hero{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 60%,#60a5fa 100%);
+  border-radius:var(--radius);padding:32px 36px;margin-bottom:20px;position:relative;overflow:hidden}
+.hero::after{content:'✈';position:absolute;right:28px;top:50%;transform:translateY(-50%);
+  font-size:72px;opacity:.12;pointer-events:none}
+.hero h1{color:#fff;font-size:22px;font-weight:700;margin-bottom:6px}
+.hero .sub{color:rgba(255,255,255,.75);font-size:13px}
+.card{background:var(--card);border-radius:var(--radius);padding:22px 24px;
+  margin-bottom:18px;box-shadow:var(--shadow)}
+.card-title{font-size:14px;font-weight:600;color:var(--sub);text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:3px;height:15px;
+  background:var(--accent);border-radius:2px}
+.table-wrap{overflow-x:auto;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
+th{padding:10px 8px;text-align:center;background:#f8f9fc;color:var(--sub);
+  font-weight:500;font-size:12px;border-bottom:2px solid var(--border)}
+th:first-child{text-align:left}
+td{padding:12px 8px;text-align:center;border-bottom:1px solid #f3f4f8;vertical-align:middle}
+td:first-child{text-align:left}
+tr:last-child td{border-bottom:none}
+.na{color:#ccc}.best{color:var(--red);font-weight:800;font-size:16px}
+.tag-d{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;
+  font-weight:600;background:#dbeafe;color:#1d4ed8}
+.tag-r{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;
+  font-weight:600;background:#d1fae5;color:#065f46}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;color:#fff;margin-top:3px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.time{font-size:12px;color:var(--sub);line-height:1.6}
+.total{background:linear-gradient(90deg,#fff7ed,#fef3c7);border:1.5px solid #fde68a;
+  border-radius:10px;padding:14px 18px;margin-top:14px;display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.total-lbl{font-size:13px;color:var(--orange)}
+.total-p{font-size:26px;font-weight:800;color:var(--red)}
+.total-sub{font-size:12px;color:var(--sub)}
+.trend-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ttab{padding:6px 13px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;
+  border:1.5px solid var(--border);background:#f8f9fc;color:var(--sub);transition:all .15s}
+.ttab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:5px}
+.lline{width:20px;height:3px;border-radius:2px;display:inline-block}
+canvas{width:100%;border-radius:8px;background:#fafbff;display:block}
+.nodata{text-align:center;padding:40px;color:var(--sub);font-size:13px}
+.footer{text-align:center;color:#b0b7c3;font-size:12px;padding:20px 0 0}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hero">
+    <h1>✈️ CTU（CTU）⇄ XMN（XMN）</h1>
+    <div class="sub">机票多平台价格监控 · 2026-10-30 06:36:41 · 数据仅供参考</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 比价结果</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>航线/日期</th><th><span class='dot' style='background:#FF4500'></span>去哪儿</th><th><span class='dot' style='background:#7C3AED'></span>同程</th><th>最低价</th><th>最低价航班</th><th>起降时间</th></tr></thead>
+        <tbody><tr><td><span class='tag-d'>去程</span> 2026-11-07</td><td class='na'>—</td><td class='best'>¥540</td><td class='best'>¥540</td><td><br><span class='badge' style='background:#7C3AED'>同程</span></td><td class='time'><br>→ </td></tr><tr><td><span class='tag-d'>去程</span> 2026-11-08</td><td class='best'>¥489</td><td>¥700</td><td class='best'>¥489</td><td><br><span class='badge' style='background:#FF4500'>去哪儿</span></td><td class='time'><br>→ </td></tr></tbody>
+      </table>
+    </div>
+    
+  </div>
+  <div class="card">
+    <div class="card-title">📈 价格走势（近7天，多平台）</div>
+    <div class="trend-tabs" id="tabs"></div>
+    <div class="legend" id="lg"></div>
+    <canvas id="cv" height="250"></canvas>
+    <div class="nodata" id="nd" style="display:none">暂无足够历史数据，随监控积累后将显示</div>
+  </div>
+  <div class="footer">由 flight-price-monitor 自动生成 · 去哪儿、同程 · 以实际购票页面为准</div>
+</div>
+<script>
+const TD={"2026-11-07": {"tongcheng": [{"t": "2026-10-30 06:35:33", "v": 540.0}]}, "2026-11-08": {"tongcheng": [{"t": "2026-10-30 06:35:54", "v": 700.0}], "qunar": [{"t": "2026-10-30 06:36:41", "v": 489.0}]}};const CM={"qunar": "#FF4500", "tongcheng": "#7C3AED"};const NM={"qunar": "去哪儿", "tongcheng": "同程"};
+var allDates=Object.keys(TD).sort(),idx=0;
+var cv=document.getElementById('cv'),nd=document.getElementById('nd'),ctx=cv?cv.getContext('2d'):null;
+function tabs(){var el=document.getElementById('tabs');if(!el)return;el.innerHTML='';
+  allDates.forEach(function(d,i){var b=document.createElement('button');
+    b.className='ttab'+(i===idx?' active':'');b.textContent=d;
+    b.onclick=function(){idx=i;tabs();draw(d)};el.appendChild(b)})}
+function draw(date){if(!ctx)return;var dd=TD[date]||{};
+  var ps=Object.keys(dd).filter(function(p){return dd[p]&&dd[p].length>0});
+  if(!ps.length){cv.style.display='none';nd.style.display='block';legend([]);return}
+  cv.style.display='block';nd.style.display='none';
+  var DPR=window.devicePixelRatio||1,W=cv.parentElement.offsetWidth||760,H=250;
+  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+  var PL=66,PR=20,PT=22,PB=50,pw=W-PL-PR,ph=H-PT-PB;
+  var allTs=[],allV=[];ps.forEach(function(p){(dd[p]||[]).forEach(function(pt){allTs.push(pt.t);allV.push(pt.v)})});
+  var tsU=allTs.filter(function(v,i,a){return a.indexOf(v)===i}).sort();
+  var mn=Math.min.apply(null,allV),mx=Math.max.apply(null,allV),sp=mx-mn||1;
+  var t0=new Date(tsU[0]).getTime(),tN=new Date(tsU[tsU.length-1]).getTime(),tSp=tN-t0||1;
+  function tx(ts){return PL+pw*(new Date(ts).getTime()-t0)/tSp}
+  function ty(v){return PT+ph*(1-(v-mn)/sp)}
+  ctx.strokeStyle='#eef0f5';ctx.lineWidth=1;
+  for(var g=0;g<=4;g++){var gy=PT+ph*(g/4);ctx.beginPath();ctx.moveTo(PL,gy);ctx.lineTo(W-PR,gy);ctx.stroke();
+    ctx.fillStyle='#9ca3af';ctx.font='11px system-ui';ctx.textAlign='right';
+    ctx.fillText('¥'+(mx-sp*(g/4)).toFixed(0),PL-8,gy+4)}
+  ctx.fillStyle='#9ca3af';ctx.textAlign='center';ctx.font='10px system-ui';
+  var sl=Math.max(1,Math.floor(tsU.length/7));
+  tsU.forEach(function(ts,i){if(i%sl!==0&&i!==tsU.length-1)return;ctx.fillText(ts.slice(5,16),tx(ts),H-8)});
+  ps.forEach(function(p){var pts=dd[p];if(!pts||!pts.length)return;var c=CM[p]||'#888';
+    ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+    pts.forEach(function(pt,i){var x=tx(pt.t),y=ty(pt.v);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+    pts.forEach(function(pt){ctx.beginPath();ctx.arc(tx(pt.t),ty(pt.v),4,0,Math.PI*2);
+      ctx.fillStyle=c;ctx.fill();ctx.beginPath();ctx.arc(tx(pt.t),ty(pt.v),2,0,Math.PI*2);
+      ctx.fillStyle='#fff';ctx.fill()});
+    var last=pts[pts.length-1];ctx.fillStyle=c;ctx.font='bold 12px system-ui';
+    ctx.textAlign='left';ctx.fillText('¥'+last.v.toFixed(0),tx(last.t)+8,ty(last.v)-6)});
+  legend(ps)}
+function legend(ps){var el=document.getElementById('lg');if(!el)return;
+  el.innerHTML=ps.map(function(p){return'<div class="legend-item"><span class="lline" style="background:'+(CM[p]||'#888')+'"></span><span>'+(NM[p]||p)+'</span></div>'}).join('')}
+if(allDates.length){tabs();draw(allDates[0])}else{if(nd)nd.style.display='block';if(cv)cv.style.display='none'}
+window.addEventListener('resize',function(){if(allDates.length)draw(allDates[idx])});
+</script>
+</body>
+</html>
