@@ -1,15 +1,24 @@
-"""携程机票：m.ctrip.com H5 (taro) + 手机UA + XHR 拦截
+"""携程机票：纯 httpx 接入（无需浏览器）
 
-数据源接口 flightListSearchForH5 返回 JSON。
-每个航班(fltitem)的 policyinfo 内含多个销售政策，
-每个政策有 tprice(含税价) 与 quantity(余票)。quantity 为 null/0 表示
-无票(诱饵价)，必须剔除，否则会拿到买不到的超低价。
+原理：
+- m.ctrip.com 旧版 webapp 的 getLowestPriceCalendar（soa2/19691）不做设备风控，
+  任何 HTTP 客户端可直接调用（浏览器环境反而会被 whaleguard 拦）。
+- 该接口返回"每日期全场最低价"，字段含 flightNo / airlineName / price /
+  transitCityCodes（中转城市码，可精确区分直飞与中转）。
+- 无法按直飞过滤查询（服务端不支持），因此策略：
+  * 目标日期的最低价是直飞 -> 正常入库（platform=ctrip）
+  * 最低价是中转   -> 不入库（避免污染直飞比价），仅日志记录
+- 接口价格为"约价"（taxIncluded 参数下仍偏展示价），实际以支付页为准。
+
+旧路径说明：taro H5 的 flightListSearchForH5 需要请求签名（403 11010），
+浏览器访问被 whaleguard 拦（createclientid 431），均不可用，已放弃。
 """
-import os
-import re
+import base64
 import json
 import urllib.parse
 from typing import List
+
+import httpx
 
 from core.models import FlightPrice
 from .base import BaseCrawler
@@ -17,159 +26,128 @@ from .base import BaseCrawler
 
 class CtripCrawler(BaseCrawler):
     name = "ctrip"
-    use_mobile = True  # 移动端 H5
+    use_mobile = False  # 纯 httpx，不用浏览器
 
-    # 携程 H5 机票单程列表（taro 版，用户提供的真实入口）
-    URL_TPL = ("https://m.ctrip.com/html5/flight/taro/first?from=inner"
-               "&tripType=ONE_WAY"
-               "&dcity={from_city}&dcityName={from_name}"
-               "&acity={to_city}&acityName={to_name}"
-               "&ddate={date}")
-
-    # 仅认航班列表接口；LowestPriceSearch 是跨日期低价日历，会混入其他日期价格
-    XHR_KEYS = [
-        "flightListSearchForH5",
-    ]
+    CALENDAR_URL = "https://m.ctrip.com/restapi/soa2/19691/getLowestPriceCalendar"
+    CLIENTID_URL = ("https://m.ctrip.com/restapi/soa2/10290/createclientid"
+                    "?systemcode=09&createtype=3&contentType=json")
+    UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) "
+          "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
 
     CITY_NAME = {
         "SZX": "深圳", "KMG": "昆明", "PEK": "北京", "BJS": "北京",
         "SHA": "上海", "PVG": "上海", "CAN": "广州", "HGH": "杭州",
-        "CTU": "成都", "SIA": "西安", "CKG": "重庆", "NKG": "南京",
-        "WUH": "武汉", "CSX": "长沙", "XMN": "厦门", "SYX": "三亚",
-        "HAK": "海口", "LJG": "丽江", "DLU": "大理", "JHG": "西双版纳",
-        "DIG": "香格里拉", "TCZ": "腾冲",
+        "CTU": "成都", "TFU": "成都", "SIA": "西安", "CKG": "重庆",
+        "NKG": "南京", "WUH": "武汉", "CSX": "长沙", "XMN": "厦门",
+        "SYX": "三亚", "HAK": "海口", "LJG": "丽江", "DLU": "大理",
+        "JHG": "西双版纳", "DIG": "香格里拉", "TCZ": "腾冲",
     }
 
-    def login_url(self) -> str:
-        return "https://m.ctrip.com/webapp/passenger/login"
+    def __init__(self, config: dict, logger):
+        super().__init__(config, logger)
+        self._client = httpx.Client(timeout=20, headers={
+            "User-Agent": self.UA,
+            "Content-Type": "application/json",
+            "Origin": "https://m.ctrip.com",
+            "Referer": "https://m.ctrip.com/webapp/flight/domestic/list",
+            "Accept-Language": "zh-CN,zh;q=0.9",
+        })
+        self._cid = ""
 
+    # ---------- 主流程 ----------
     def fetch(self, from_city: str, to_city: str, dates: List[str]) -> List[FlightPrice]:
-        results: List[FlightPrice] = []
-        with self.browser() as ctx:
-            page = self.new_page(ctx)
-            for date in dates:
-                url = self.URL_TPL.format(
-                    from_city=from_city.upper(),
-                    to_city=to_city.upper(),
-                    from_name=urllib.parse.quote(self.CITY_NAME.get(from_city.upper(), from_city)),
-                    to_name=urllib.parse.quote(self.CITY_NAME.get(to_city.upper(), to_city)),
-                    date=date,
-                )
-                self.logger.info("[ctrip] GET %s", url)
-                captured = self.attach_xhr_collector(page, self.XHR_KEYS)
-                try:
-                    page.goto(url, wait_until="domcontentloaded")
-                    page.wait_for_timeout(8000)
-                    for _ in range(4):
-                        try:
-                            page.mouse.wheel(0, 2000)
-                        except Exception:
-                            pass
-                        page.wait_for_timeout(1200)
+        fc, tc = from_city.upper(), to_city.upper()
+        items = self._calendar(fc, tc)
+        if not items:
+            return []
 
-                    price = self._pick_lowest(captured)
-                    self._dump_xhr(captured, f"ctrip_xhr_{date}")
-                    if price is not None:
-                        results.append(FlightPrice(
-                            platform=self.name,
-                            from_city=from_city, to_city=to_city,
-                            depart_date=date, price=price,
-                        ))
-                        self.logger.info("[ctrip] %s 最低价 ¥%.0f", date, price)
-                    else:
-                        self.logger.warning("[ctrip] %s 未解析到价格", date)
-                        self._debug_snapshot(page, f"nopx_{date}")
-                except Exception as e:
-                    self.logger.exception("[ctrip] %s 抓取异常: %s", date, e)
-                self._sleep()
+        results: List[FlightPrice] = []
+        wanted = {d for d in dates}
+        by_date = {}
+        for it in items:
+            if it.get("departureCityCode") == fc and it.get("arrivalCityCode") == tc:
+                by_date.setdefault(it.get("departureDate"), []).append(it)
+
+        for date in sorted(wanted):
+            rows = by_date.get(date) or []
+            if not rows:
+                self.logger.warning("[ctrip] %s %s->%s 日历无该日期数据", date, fc, tc)
+                continue
+            best = min(rows, key=lambda x: x.get("price") or 1e18)
+            transit = best.get("transitCityCodes") or []
+            price = best.get("price")
+            if transit or price is None:
+                self.logger.info(
+                    "[ctrip] %s 最低 ¥%s 为中转(%s)，跳过不污染直飞比价",
+                    date, price, ",".join(map(str, transit)))
+                continue
+            results.append(FlightPrice(
+                platform=self.name,
+                from_city=fc, to_city=tc, depart_date=date,
+                price=float(price),
+                airline=str(best.get("airlineName") or ""),
+                flight_no=str(best.get("flightNo") or ""),
+                depart_time="",
+                arrive_time="",
+                extra=json.dumps({"source": "lowest_price_calendar",
+                                  "discount": best.get("discount")}, ensure_ascii=False),
+            ))
+            self.logger.info("[ctrip] %s 直飞最低 ¥%.0f (%s %s)",
+                             date, float(price), best.get("airlineName"), best.get("flightNo"))
         return results
 
-    def _pick_lowest(self, captured: list) -> float | None:
-        prices: list = []
-        for item in captured:
-            prices.extend(self._extract_ctrip_prices(item.get("text", "")))
-        prices = [p for p in prices if 100 <= p <= 50000]
-        return float(min(prices)) if prices else None
+    # ---------- 接口细节 ----------
+    def _client_id(self) -> str:
+        if self._cid:
+            return self._cid
+        try:
+            r = self._client.get(self.CLIENTID_URL)
+            self._cid = str(r.json().get("ClientID") or "")
+        except Exception as e:
+            self.logger.warning("[ctrip] createclientid 失败: %s", e)
+        return self._cid
 
-    @staticmethod
-    def _extract_ctrip_prices(text: str) -> list:
-        """解析携程 flightListSearchForH5 JSON，返回所有"有票"政策的含税价。
-
-        逐航班递归遍历 policyinfo，配对 (tprice, quantity)，
-        quantity 为 null/0 的政策剔除（无票诱饵价）。
-        """
-        if not text:
+    def _calendar(self, fc: str, tc: str) -> list:
+        """调 getLowestPriceCalendar，返回航班条目列表（异常返回空）。"""
+        cid = self._client_id()
+        search = {
+            "cityPairs": [{"departureCode": fc, "arrivalCode": tc}],
+            "cabinClasses": ["ECONOMY"],
+            "regionType": "DOMESTIC",
+            "taxIncluded": True,
+            "tripType": "ONE_WAY",
+            "start": "",
+            "end": "",
+        }
+        inner = json.dumps({"searchParameter": search},
+                           separators=(",", ":"), ensure_ascii=False)
+        head_ext = [
+            {"name": "aid", "value": "66672"},
+            {"name": "sid", "value": "508670"},
+            {"name": "appId", "value": "100008344"},
+        ]
+        if cid:
+            head_ext.append({"name": "clientId", "value": cid})
+        body = {
+            "data": inner,
+            "head": {"cid": cid, "ctok": "", "cver": "1.0", "lang": "01",
+                     "sid": "8888", "syscode": "09", "auth": None,
+                     "extension": head_ext},
+        }
+        # mystery = 内层 JSON 的 base64（无填充），服务端校验一致性
+        body["head"]["extension"].append(
+            {"name": "mystery",
+             "value": base64.b64encode(inner.encode()).decode().rstrip("=")})
+        try:
+            r = self._client.post(self.CALENDAR_URL, json=body)
+            if r.status_code != 200:
+                self.logger.warning("[ctrip] 日历接口 HTTP %s", r.status_code)
+                return []
+            obj = r.json()
+            data = obj.get("data")
+            if isinstance(data, str):
+                data = json.loads(data)
+            return data if isinstance(data, list) else []
+        except Exception as e:
+            self.logger.warning("[ctrip] 日历接口异常: %s", e)
             return []
-        try:
-            obj = json.loads(text)
-        except Exception:
-            # 解析失败则退回正则（但仍要求 tprice 与 quantity 在同一对象，尽量配对）
-            return CtripCrawler._regex_fallback(text)
-
-        flts = obj.get("fltitem")
-        if not isinstance(flts, list):
-            return CtripCrawler._regex_fallback(text)
-
-        prices: list = []
-
-        def scan(node):
-            """递归找 tprice，并取同级 quantity 判断是否有票"""
-            if isinstance(node, dict):
-                if "tprice" in node:
-                    tp = node.get("tprice")
-                    qty = node.get("quantity", None)
-                    try:
-                        tpv = int(float(tp))
-                    except Exception:
-                        tpv = None
-                    has_ticket = qty is not None
-                    if has_ticket:
-                        try:
-                            has_ticket = int(qty) > 0
-                        except Exception:
-                            has_ticket = True  # 非数字但非 null，视为有票
-                    if tpv is not None and has_ticket:
-                        prices.append(tpv)
-                for v in node.values():
-                    scan(v)
-            elif isinstance(node, list):
-                for v in node:
-                    scan(v)
-
-        for f in flts:
-            scan(f)
-        return prices
-
-    @staticmethod
-    def _regex_fallback(text: str) -> list:
-        """JSON 解析失败时的兜底：仅取 tprice 紧跟 quantity 非 null 的。"""
-        prices: list = []
-        for m in re.finditer(
-            r'"tprice"\s*:\s*(\d+(?:\.\d+)?)\s*,\s*"quantity"\s*:\s*(null|"?\d+"?)',
-            text,
-        ):
-            qty = m.group(2)
-            if qty == "null":
-                continue
-            try:
-                if int(qty.strip('"')) <= 0:
-                    continue
-            except Exception:
-                pass
-            prices.append(int(float(m.group(1))))
-        return prices
-
-    def _dump_xhr(self, captured: list, tag: str):
-        if not self.debug or not captured:
-            return
-        os.makedirs(self.debug_dir, exist_ok=True)
-        path = os.path.join(self.debug_dir, tag + ".txt")
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                for i, item in enumerate(captured):
-                    f.write(f"\n----- [{i}] {item['url']} -----\n")
-                    f.write((item.get("text") or "")[:200000])
-                    f.write("\n")
-            self.logger.info("[ctrip] 已保存 XHR: %s", path)
-        except Exception:
-            pass
