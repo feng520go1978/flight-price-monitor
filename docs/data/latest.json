@@ -20,7 +20,7 @@
         "tongcheng"
       ],
       "threshold": 0,
-      "query_time": "2026-10-30 07:14:33"
+      "query_time": "2026-10-30 07:19:20"
     },
     "results": [
       {
@@ -33,7 +33,7 @@
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 07:13:05"
+        "fetched_at": "2026-10-30 07:17:46"
       },
       {
         "platform": "tongcheng",
@@ -45,19 +45,19 @@
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 07:13:33"
+        "fetched_at": "2026-10-30 07:18:15"
       },
       {
         "platform": "qunar",
         "from": "CTU",
         "to": "XMN",
         "date": "2026-11-08",
-        "price": 489.0,
+        "price": 700.0,
         "airline": "",
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 07:14:33"
+        "fetched_at": "2026-10-30 07:19:20"
       }
     ],
     "summary": [
@@ -80,10 +80,10 @@
         "date": "2026-11-08",
         "per_platform": {
           "tongcheng": 700.0,
-          "qunar": 489.0
+          "qunar": 700.0
         },
-        "min_price": 489.0,
-        "best_platform": "qunar",
+        "min_price": 700.0,
+        "best_platform": "tongcheng",
         "best_flight": "",
         "best_depart_time": "",
         "best_arrive_time": ""
@@ -93,7 +93,7 @@
       "2026-11-07": {
         "tongcheng": [
           {
-            "t": "2026-10-30 07:13:05",
+            "t": "2026-10-30 07:17:46",
             "v": 540.0
           }
         ]
@@ -101,18 +101,18 @@
       "2026-11-08": {
         "tongcheng": [
           {
-            "t": "2026-10-30 07:13:33",
+            "t": "2026-10-30 07:18:15",
             "v": 700.0
           }
         ],
         "qunar": [
           {
-            "t": "2026-10-30 07:14:33",
-            "v": 489.0
+            "t": "2026-10-30 07:19:20",
+            "v": 700.0
           }
         ]
       }
     },
-    "generated_at": "2026-10-30T07:14:46.965666Z"
+    "generated_at": "2026-10-30T07:19:28.628542Z"
   }
 }
