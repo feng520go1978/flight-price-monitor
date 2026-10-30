@@ -133,19 +133,6 @@ class QunarCrawler(BaseCrawler):
         price = self._fetch_via_httpx(from_city, to_city, date)
         if price is not None:
             self.logger.info("[qunar] httpx 命中，省去浏览器")
-            # 直飞模式下的 A/B 校验：再发一次"含中转"，看两者是否一致
-            if self.direct_only:
-                try:
-                    alt = self._fetch_via_httpx(from_city, to_city, date, dstraight=0, label="A/B含中转")
-                    if alt is not None:
-                        same = abs(alt - price) < 1
-                        self.logger.info(
-                            "[qunar] A/B %s：直飞 ¥%.0f / 含中转 ¥%.0f → %s",
-                            date, price, alt,
-                            "一致，直飞参数可能未生效" if same else "有差异，直飞过滤生效",
-                        )
-                except Exception:
-                    pass
             return price
         # 2) httpx 失败（限流/无token/异常）→ 浏览器单条查
         self.logger.info("[qunar] httpx 未命中，回退浏览器")
@@ -214,6 +201,15 @@ class QunarCrawler(BaseCrawler):
             return None
         self.logger.info("[qunar] httpx%s 提取价格列表: %s",
                          (" " + label) if label else "", sorted(set(prices)))
+        if not label:
+            try:
+                lo = int(min(prices))
+                idx = text.find(str(lo))
+                if idx >= 0:
+                    snippet = text[max(0, idx - 300): idx + 300].replace("\n", " ")
+                    self.logger.info("[qunar] 最低价 ¥%d 上下文: %s", lo, snippet)
+            except Exception:
+                pass
         return float(min(prices))
 
     @staticmethod
