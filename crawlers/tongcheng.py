@@ -168,22 +168,9 @@ class TongchengCrawler(BaseCrawler):
                     fl_kept += 1
 
         if fl_total and self.direct_only:
-            self.logger.info("[tongcheng] 航班 %d 条，直飞 %d 条", fl_total, fl_kept)
+            self.logger.info("[tongcheng] 航班条目 %d 条，直飞 %d 条", fl_total, fl_kept)
             if not self._logged_keys and isinstance(fl, list) and fl and isinstance(fl[0], dict):
                 self.logger.info("[tongcheng] fl 字段样例: %s", sorted(fl[0].keys()))
-                try:
-                    from collections import Counter
-                    for f in fl[:2]:
-                        if isinstance(f, dict):
-                            self.logger.info(
-                                "[tongcheng] 样例航班: %s",
-                                {k: f.get(k) for k in ("fn", "atp", "$flightType", "fs", "sts", "td", "dt", "at")},
-                            )
-                    for k in ("$flightType", "fs", "sts", "td", "sfd", "icsf", "ieso"):
-                        c = Counter(str(f.get(k)) for f in fl if isinstance(f, dict))
-                        self.logger.info("[tongcheng] 字段 %s 分布: %s", k, dict(c.most_common(6)))
-                except Exception:
-                    pass
                 self._logged_keys = True
 
         # 直飞模式下 fl[] 没解析出来时，退回 lp 兜底（总比空手好）
@@ -200,7 +187,16 @@ class TongchengCrawler(BaseCrawler):
 
     @staticmethod
     def _is_transfer(flt: dict) -> bool:
-        """判断航班是否含中转/经停。仅在有明确正向标记时判定，避免误杀。"""
+        """判断航班是否含中转/经停。
+
+        同程的中转航班走的是另一个接口（connection/flights），
+        book1/flights 本身基本只有直飞，这里做兜底校验：
+        1) 显式中转标记字段（有正向值时判定，避免误杀）
+        2) 航段序列 fs 里出现多个"出发机场"(ft==4) 即为多段行程
+        """
+        if flt.get("ieso") is True:
+            return True
+
         for k in ("transfer", "transfers", "transferNum", "isTransfer",
                   "stop", "stops", "stopNum", "stopCount", "zz", "trn"):
             if k not in flt:
@@ -220,6 +216,13 @@ class TongchengCrawler(BaseCrawler):
                 continue
             if isinstance(v, str) and v.strip() not in ("", "0", "false", "False", "无"):
                 return True
+
+        fs = flt.get("fs")
+        if isinstance(fs, list):
+            dep_segments = [x for x in fs if isinstance(x, dict) and x.get("ft") == 4]
+            if len(dep_segments) > 1:
+                return True
+
         return False
 
     @staticmethod
