@@ -16,48 +16,35 @@
       ],
       "return_dates": [],
       "platforms": [
-        "ctrip",
         "tongcheng"
       ],
       "threshold": 0,
-      "query_time": "2026-10-30 22:45:50"
+      "query_time": "2026-10-31 06:32:37"
     },
     "results": [
-      {
-        "platform": "ctrip",
-        "from": "CTU",
-        "to": "XMN",
-        "date": "2026-11-08",
-        "price": 740.0,
-        "airline": "成都航空",
-        "flight_no": "EU1969",
-        "depart_time": "",
-        "arrive_time": "",
-        "fetched_at": "2026-10-30 22:45:09"
-      },
       {
         "platform": "tongcheng",
         "from": "CTU",
         "to": "XMN",
         "date": "2026-11-07",
-        "price": 450.0,
+        "price": 540.0,
         "airline": "",
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 22:45:24"
+        "fetched_at": "2026-10-31 06:32:10"
       },
       {
         "platform": "tongcheng",
         "from": "CTU",
         "to": "XMN",
         "date": "2026-11-08",
-        "price": 700.0,
+        "price": 667.0,
         "airline": "",
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-30 22:45:50"
+        "fetched_at": "2026-10-31 06:32:37"
       }
     ],
     "summary": [
@@ -66,9 +53,9 @@
         "to": "XMN",
         "date": "2026-11-07",
         "per_platform": {
-          "tongcheng": 450.0
+          "tongcheng": 540.0
         },
-        "min_price": 450.0,
+        "min_price": 540.0,
         "best_platform": "tongcheng",
         "best_flight": "",
         "best_depart_time": "",
@@ -79,10 +66,9 @@
         "to": "XMN",
         "date": "2026-11-08",
         "per_platform": {
-          "ctrip": 740.0,
-          "tongcheng": 700.0
+          "tongcheng": 667.0
         },
-        "min_price": 700.0,
+        "min_price": 667.0,
         "best_platform": "tongcheng",
         "best_flight": "",
         "best_depart_time": "",
@@ -90,29 +76,23 @@
       }
     ],
     "trend": {
-      "2026-11-08": {
-        "ctrip": [
-          {
-            "t": "2026-10-30 22:45:09",
-            "v": 740.0
-          }
-        ],
-        "tongcheng": [
-          {
-            "t": "2026-10-30 22:45:50",
-            "v": 700.0
-          }
-        ]
-      },
       "2026-11-07": {
         "tongcheng": [
           {
-            "t": "2026-10-30 22:45:24",
-            "v": 450.0
+            "t": "2026-10-31 06:32:10",
+            "v": 540.0
+          }
+        ]
+      },
+      "2026-11-08": {
+        "tongcheng": [
+          {
+            "t": "2026-10-31 06:32:37",
+            "v": 667.0
           }
         ]
       }
     },
-    "generated_at": "2026-10-30T22:51:36.149169Z"
+    "generated_at": "2026-10-31T06:38:53.133060Z"
   }
 }
