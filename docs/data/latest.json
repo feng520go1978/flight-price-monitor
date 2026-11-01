@@ -19,7 +19,7 @@
         "tongcheng"
       ],
       "threshold": 0,
-      "query_time": "2026-10-31 22:07:32"
+      "query_time": "2026-11-01 07:03:50"
     },
     "results": [
       {
@@ -27,12 +27,12 @@
         "from": "CTU",
         "to": "XMN",
         "date": "2026-11-07",
-        "price": 500.0,
+        "price": 540.0,
         "airline": "",
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-31 22:07:09"
+        "fetched_at": "2026-11-01 07:03:28"
       },
       {
         "platform": "tongcheng",
@@ -44,7 +44,7 @@
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-10-31 22:07:32"
+        "fetched_at": "2026-11-01 07:03:50"
       }
     ],
     "summary": [
@@ -53,9 +53,9 @@
         "to": "XMN",
         "date": "2026-11-07",
         "per_platform": {
-          "tongcheng": 500.0
+          "tongcheng": 540.0
         },
-        "min_price": 500.0,
+        "min_price": 540.0,
         "best_platform": "tongcheng",
         "best_flight": "",
         "best_depart_time": "",
@@ -79,20 +79,20 @@
       "2026-11-07": {
         "tongcheng": [
           {
-            "t": "2026-10-31 22:07:09",
-            "v": 500.0
+            "t": "2026-11-01 07:03:28",
+            "v": 540.0
           }
         ]
       },
       "2026-11-08": {
         "tongcheng": [
           {
-            "t": "2026-10-31 22:07:32",
+            "t": "2026-11-01 07:03:50",
             "v": 667.0
           }
         ]
       }
     },
-    "generated_at": "2026-10-31T22:13:10.835101Z"
+    "generated_at": "2026-11-01T07:09:39.821162Z"
   }
 }
