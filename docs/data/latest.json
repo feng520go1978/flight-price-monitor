@@ -16,12 +16,26 @@
       ],
       "return_dates": [],
       "platforms": [
+        "ctrip",
+        "qunar",
         "tongcheng"
       ],
       "threshold": 0,
-      "query_time": "2026-11-01 18:13:57"
+      "query_time": "2026-11-01 22:35:03"
     },
     "results": [
+      {
+        "platform": "ctrip",
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-07",
+        "price": 490.0,
+        "airline": "厦门航空",
+        "flight_no": "MF8442",
+        "depart_time": "",
+        "arrive_time": "",
+        "fetched_at": "2026-11-01 22:33:23"
+      },
       {
         "platform": "tongcheng",
         "from": "CTU",
@@ -32,7 +46,7 @@
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-11-01 18:13:34"
+        "fetched_at": "2026-11-01 22:33:38"
       },
       {
         "platform": "tongcheng",
@@ -44,7 +58,19 @@
         "flight_no": "",
         "depart_time": "",
         "arrive_time": "",
-        "fetched_at": "2026-11-01 18:13:57"
+        "fetched_at": "2026-11-01 22:33:58"
+      },
+      {
+        "platform": "qunar",
+        "from": "CTU",
+        "to": "XMN",
+        "date": "2026-11-08",
+        "price": 667.0,
+        "airline": "",
+        "flight_no": "",
+        "depart_time": "",
+        "arrive_time": "",
+        "fetched_at": "2026-11-01 22:35:03"
       }
     ],
     "summary": [
@@ -53,11 +79,12 @@
         "to": "XMN",
         "date": "2026-11-07",
         "per_platform": {
+          "ctrip": 490.0,
           "tongcheng": 490.0
         },
         "min_price": 490.0,
-        "best_platform": "tongcheng",
-        "best_flight": "",
+        "best_platform": "ctrip",
+        "best_flight": "厦门航空MF8442",
         "best_depart_time": "",
         "best_arrive_time": ""
       },
@@ -66,7 +93,8 @@
         "to": "XMN",
         "date": "2026-11-08",
         "per_platform": {
-          "tongcheng": 667.0
+          "tongcheng": 667.0,
+          "qunar": 667.0
         },
         "min_price": 667.0,
         "best_platform": "tongcheng",
@@ -77,9 +105,15 @@
     ],
     "trend": {
       "2026-11-07": {
+        "ctrip": [
+          {
+            "t": "2026-11-01 22:33:23",
+            "v": 490.0
+          }
+        ],
         "tongcheng": [
           {
-            "t": "2026-11-01 18:13:34",
+            "t": "2026-11-01 22:33:38",
             "v": 490.0
           }
         ]
@@ -87,12 +121,18 @@
       "2026-11-08": {
         "tongcheng": [
           {
-            "t": "2026-11-01 18:13:57",
+            "t": "2026-11-01 22:33:58",
+            "v": 667.0
+          }
+        ],
+        "qunar": [
+          {
+            "t": "2026-11-01 22:35:03",
             "v": 667.0
           }
         ]
       }
     },
-    "generated_at": "2026-11-01T18:19:32.794785Z"
+    "generated_at": "2026-11-01T22:39:34.036476Z"
   }
 }
